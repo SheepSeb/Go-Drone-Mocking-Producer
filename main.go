@@ -50,11 +50,12 @@ func simpleHttps() {
 }
 
 func main() {
+
 	var drone domain.Drone
 	drone = domain.NewDrone(1, "seb", false)
 	p, err := kafka.NewProducer(&kafka.ConfigMap{
 		"bootstrap.servers": "localhost:9092",
-		"client.id":         "goapp",
+		"client.id":         "go app",
 		"acks":              "all",
 	})
 
@@ -63,11 +64,32 @@ func main() {
 		os.Exit(1)
 	}
 
-	topic_str := "drone_topic"
+	defer p.Close()
 
-	err = p.Produce(&kafka.Message{
-		TopicPartition: kafka.TopicPartition{Topic: &topic_str, Partition: kafka.PartitionAny},
-		Value:          drone.ToJson()},
-		nil, // delivery channel
-	)
+	topicStr := "drone_topic"
+	ticker := time.NewTicker(500 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			_, err := json.Marshal(drone)
+			if err != nil {
+				fmt.Printf("Failed to marshal drone: %s\n", err)
+				continue
+			}
+			err = p.Produce(&kafka.Message{
+				TopicPartition: kafka.TopicPartition{Topic: &topicStr, Partition: kafka.PartitionAny},
+				Value:          drone.ToJson()},
+				nil, // delivery channel
+			)
+
+			if err != nil {
+				fmt.Printf("Failed to produce message: %s\n", err)
+			} else {
+				fmt.Printf("Produced message: \n")
+			}
+
+		}
+	}
 }
