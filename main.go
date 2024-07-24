@@ -54,7 +54,6 @@ func main() {
 	const kafka_topic = "drone-topic"
 
 	var drone domain.Drone
-	drone = domain.NewDrone(1, "seb", false)
 	config := sarama.NewConfig()
 	config.Producer.Return.Successes = true
 
@@ -78,6 +77,7 @@ func main() {
 	for {
 		select {
 		case <-ticker.C:
+			drone = domain.NewDrone(1, "seb", false)
 			value, err := json.Marshal(drone)
 			if err != nil {
 				fmt.Printf("Failed to marshal drone: %s\n", err)

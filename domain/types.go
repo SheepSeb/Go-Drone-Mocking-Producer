@@ -16,31 +16,33 @@ type IMUSensor struct {
 }
 
 type DOFSensor struct {
-	MagX      float64   `json:"magX"`
-	MagY      float64   `json:"magY"`
-	MagZ      float64   `json:"magZ"`
-	GyroX     float64   `json:"gyroX"`
-	GyroY     float64   `json:"gyroY"`
-	GyroZ     float64   `json:"gyroZ"`
-	Timestamp time.Time `json:"timestamp"`
+	MagX       float64   `json:"magX"`
+	MagY       float64   `json:"magY"`
+	MagZ       float64   `json:"magZ"`
+	GyroX      float64   `json:"gyroX"`
+	GyroY      float64   `json:"gyroY"`
+	GyroZ      float64   `json:"gyroZ"`
+	Timestamp  time.Time `json:"timestamp"`
+	TypeSensor string    `json:"typeSensor"`
 }
 
 type Temperature struct {
-	Grades    float64   `json:"grades"`
-	Timestamp time.Time `json:"timestamp"`
+	Grades     float64   `json:"grades"`
+	Timestamp  time.Time `json:"timestamp"`
+	TypeSensor string    `json:"typeSensor"`
 }
 
 type Motors struct {
 	Voltage    float64   `json:"voltage"`
-	VoltageRef float64   `json:"voltage_Ref"`
+	VoltageRef float64   `json:"voltageRef"`
 	Timestamp  time.Time `json:"timestamp"`
 }
 
 type Drone struct {
-	DroneId   int       `json:"drone_Id"`
+	DroneId   int       `json:"droneId"`
 	DroneName string    `json:"droneName"`
 	Motors    []Motors  `json:"motors"`
-	Sensor    []Sensors `json:"sensor"`
+	Sensor    []Sensors `json:"sensors"`
 }
 
 func (imu IMUSensor) GenerateData(randomizer bool, timestamp time.Time) Sensors {
@@ -54,10 +56,11 @@ func (imu IMUSensor) GenerateData(randomizer bool, timestamp time.Time) Sensors 
 	}
 	println(time.Now().String())
 	return IMUSensor{
-		Wx:        minVal + rand.Float64()*(maxVal-minVal),
-		Wy:        minVal + rand.Float64()*(maxVal-minVal),
-		Wz:        minVal + rand.Float64()*(maxVal-minVal),
-		Timestamp: timestamp,
+		Wx:         minVal + rand.Float64()*(maxVal-minVal),
+		Wy:         minVal + rand.Float64()*(maxVal-minVal),
+		Wz:         minVal + rand.Float64()*(maxVal-minVal),
+		Timestamp:  timestamp,
+		TypeSensor: "IMU",
 	}
 }
 
@@ -71,13 +74,14 @@ func (dof DOFSensor) GenerateData(randomizer bool, timestamp time.Time) Sensors 
 		maxVal = 25.0
 	}
 	return DOFSensor{
-		GyroX:     minVal + rand.Float64()*(maxVal-minVal),
-		GyroY:     minVal + rand.Float64()*(maxVal-minVal),
-		GyroZ:     minVal + rand.Float64()*(maxVal-minVal),
-		MagX:      minVal + rand.Float64()*(maxVal-minVal),
-		MagY:      minVal + rand.Float64()*(maxVal-minVal),
-		MagZ:      minVal + rand.Float64()*(maxVal-minVal),
-		Timestamp: timestamp,
+		GyroX:      minVal + rand.Float64()*(maxVal-minVal),
+		GyroY:      minVal + rand.Float64()*(maxVal-minVal),
+		GyroZ:      minVal + rand.Float64()*(maxVal-minVal),
+		MagX:       minVal + rand.Float64()*(maxVal-minVal),
+		MagY:       minVal + rand.Float64()*(maxVal-minVal),
+		MagZ:       minVal + rand.Float64()*(maxVal-minVal),
+		Timestamp:  timestamp,
+		TypeSensor: "DOF",
 	}
 }
 
@@ -91,8 +95,9 @@ func (temp Temperature) GenerateData(randomizer bool, timestamp time.Time) Senso
 		maxVal = 25.0
 	}
 	return Temperature{
-		Grades:    minVal + rand.Float64()*(maxVal-minVal),
-		Timestamp: timestamp,
+		Grades:     minVal + rand.Float64()*(maxVal-minVal),
+		Timestamp:  timestamp,
+		TypeSensor: "Temperature",
 	}
 }
 
