@@ -5,10 +5,9 @@ import (
 	"drone_producer/domain"
 	"encoding/json"
 	"fmt"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/IBM/sarama"
 	"io"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -51,43 +50,52 @@ func simpleHttps() {
 
 func main() {
 
+	const kafka_ip = "localhost:9092"
+	const kafka_topic = "drone-topic"
+
 	var drone domain.Drone
 	drone = domain.NewDrone(1, "seb", false)
-	p, err := kafka.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers": "localhost:9092",
-		"client.id":         "go app",
-		"acks":              "all",
-	})
+	config := sarama.NewConfig()
+	config.Producer.Return.Successes = true
+
+	producer, err := sarama.NewSyncProducer([]string{kafka_ip}, config)
 
 	if err != nil {
-		fmt.Printf("Failed to create producer: %s\n", err)
-		os.Exit(1)
+		fmt.Println("Failed to start Sarama producer: ", err)
+		return
 	}
 
-	defer p.Close()
+	defer func(producer sarama.SyncProducer) {
+		err := producer.Close()
+		if err != nil {
+			fmt.Println("Failed to close Sarama producer: ", err)
+		}
+	}(producer)
 
-	topicStr := "drone_topic"
 	ticker := time.NewTicker(500 * time.Millisecond)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ticker.C:
-			_, err := json.Marshal(drone)
+			value, err := json.Marshal(drone)
 			if err != nil {
 				fmt.Printf("Failed to marshal drone: %s\n", err)
 				continue
 			}
-			err = p.Produce(&kafka.Message{
-				TopicPartition: kafka.TopicPartition{Topic: &topicStr, Partition: kafka.PartitionAny},
-				Value:          drone.ToJson()},
-				nil, // delivery channel
-			)
+
+			msg := &sarama.ProducerMessage{
+				Topic: kafka_topic,
+				Value: sarama.StringEncoder(value),
+			}
+
+			partition, offset, err := producer.SendMessage(msg)
 
 			if err != nil {
 				fmt.Printf("Failed to produce message: %s\n", err)
+				continue
 			} else {
-				fmt.Printf("Produced message: \n")
+				fmt.Printf("Produced message: partition %d, offset %d\n", partition, offset)
 			}
 
 		}
