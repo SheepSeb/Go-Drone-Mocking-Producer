@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/IBM/sarama"
 	"io"
+	"math/rand"
 	"net/http"
 	"time"
 )
@@ -53,6 +54,14 @@ func main() {
 	const kafka_ip = "localhost:9092"
 	const kafka_topic = "drone-topic"
 
+	drone_values_hash := map[int]string{
+		1: "seb",
+		2: "julien",
+		3: "pierre",
+		4: "thomas",
+		5: "louis",
+	}
+
 	var drone domain.Drone
 	config := sarama.NewConfig()
 	config.Producer.Return.Successes = true
@@ -77,7 +86,14 @@ func main() {
 	for {
 		select {
 		case <-ticker.C:
-			drone = domain.NewDrone(1, "seb", false)
+			keys := make([]int, 0, len(drone_values_hash))
+			for k := range drone_values_hash {
+				keys = append(keys, k)
+			}
+			randomKey := keys[rand.Intn(len(keys))]
+			randomValue := drone_values_hash[randomKey]
+
+			drone = domain.NewDrone(randomKey, randomValue, false)
 			value, err := json.Marshal(drone)
 			if err != nil {
 				fmt.Printf("Failed to marshal drone: %s\n", err)
